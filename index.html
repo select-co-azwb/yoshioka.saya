@@ -676,25 +676,15 @@
         }
 
         async function bridgeRequest(payload) {
-          if (!bridgeToken) {
-            throw new Error('This device has not been connected yet.');
-          }
-
           const response = await fetch(BRIDGE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ ...payload, token: bridgeToken })
+            body: JSON.stringify(payload)
           });
 
           const data = await response.json();
 
           if (!data.ok) {
-            if (/unauthorized/i.test(data.error || '')) {
-              localStorage.removeItem(BRIDGE_TOKEN_KEY);
-              bridgeToken = '';
-              manageReady = false;
-              showBridgeSetup('The saved connection has expired. Enter the current connection code.');
-            }
             throw new Error(data.error || 'The request could not be completed.');
           }
 
@@ -742,11 +732,6 @@
         }
 
         async function initializeManageView() {
-          if (!bridgeToken) {
-            showBridgeSetup('Enter the connection code provided by Select.');
-            return;
-          }
-
           bridgeSetupWarning.hidden = true;
           manageControls.hidden = false;
           setManageStatus('Loading available Days…');
@@ -923,7 +908,6 @@
         // ========= 10) Init =========
         (async function init(){
           try {
-            bridgeToken = captureBridgeToken();
             await loadBridgeStatus();
             const discoveredMap = await fetchGidMap();
             const allowedMap = Object.fromEntries(
